@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ezcontrol 登录</title>
+<link rel="icon" href="/assets/icon.svg">
+<link rel="stylesheet" href="/assets/style.css">
+</head>
+<body class="login-body">
+<form id="login" class="login-card" autocomplete="on">
+  <h1>ezcontrol</h1>
+  <label>用户名<input id="u" name="username" autocomplete="username" required></label>
+  <label>密码<input id="p" name="password" type="password" autocomplete="current-password" required></label>
+  <button type="submit">登录</button>
+  <div id="msg" class="msg"></div>
+</form>
+<script src="/assets/login.js"></script>
+</body>
+</html>

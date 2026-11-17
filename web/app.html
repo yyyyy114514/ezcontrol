@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>ezcontrol</title>
+<link rel="icon" href="/assets/icon.svg">
+<link rel="stylesheet" href="/assets/style.css">
+</head>
+<body class="app-body">
+<header id="bar">
+  <button id="btnHide" title="收起工具栏">▲</button>
+  <select id="selMon" title="显示器"></select>
+  <select id="selCodec" title="编码方式：H.264 省带宽、画质好（需 HTTPS 或 localhost 且浏览器支持 WebCodecs）；JPEG 兼容性最好">
+    <option value="h264">H.264</option><option value="jpeg">JPEG</option>
+  </select>
+  <label title="JPEG 时为画质；H.264 时决定码率上限">画质<input id="rngQ" type="range" min="10" max="95" step="5" value="70"><span id="lblQ">70</span></label>
+  <select id="selScale" title="分辨率缩放。自动：按浏览器里实际显示的大小编码，省 CPU 和带宽且看不出差别">
+    <option value="auto">自动</option><option value="1">100%</option><option value="0.75">75%</option>
+    <option value="0.5">50%</option><option value="0.35">35%</option>
+  </select>
+  <select id="selFps" title="最高帧率">
+    <option value="120">120fps</option><option value="60">60fps</option><option value="30">30fps</option>
+    <option value="15">15fps</option><option value="5">5fps</option>
+  </select>
+  <select id="selFit" title="显示方式">
+    <option value="fit">适应窗口</option><option value="real">原始大小</option>
+  </select>
+  <label title="网络拥堵时自动降低画质和分辨率，通畅后恢复；画质、缩放设置作为上限"><input id="chkAuto" type="checkbox" checked>自动</label>
+  <label title="静止后发送高清画面"><input id="chkRefine" type="checkbox" checked>高清补帧</label>
+  <label title="只看不控制"><input id="chkView" type="checkbox">仅观看</label>
+  <span class="sep"></span>
+  <button id="btnKeys">⌨ 键盘</button>
+  <div class="dropdown">
+    <button id="btnCombo">快捷键 ▾</button>
+    <div id="comboMenu" class="menu"></div>
+  </div>
+  <button id="btnClip">剪贴板</button>
+  <button id="btnFiles">文件</button>
+  <button id="btnText">输入文本</button>
+  <button id="btnFull">全屏</button>
+  <span class="sep"></span>
+  <span id="stats" class="stats" title="fps 是实际发送的画面帧数：画面不动时不发帧，显示为 0 属正常">连接中…</span>
+  <button id="btnLogout">退出</button>
+</header>
+<button id="btnShow" class="hidden" title="展开工具栏">▼</button>
+
+<div id="toast" class="toast hidden"></div>
+<div id="clipNotice" class="notice hidden">
+  <span id="clipNoticeText"></span>
+  <button id="clipNoticeOk"></button>
+  <button id="clipNoticeNo">忽略</button>
+</div>
+
+<main id="stage" tabindex="0">
+  <canvas id="screen"></canvas>
+  <div id="overlay" class="overlay">连接中…</div>
+</main>
+
+<section id="kbd" class="panel bottom hidden"></section>
+
+<section id="clipPanel" class="panel side hidden">
+  <h3>剪贴板 <button class="close" data-close="clipPanel">×</button></h3>
+  <textarea id="clipText" placeholder="文本内容"></textarea>
+  <div class="row">
+    <button id="clipFetch">读取远程剪贴板</button>
+    <button id="clipSend">写入远程剪贴板</button>
+  </div>
+  <div class="row">
+    <button id="clipLocalRead">读取本地剪贴板</button>
+    <button id="clipLocalWrite">复制到本地</button>
+  </div>
+  <h3>自动同步</h3>
+  <label class="field">远程复制 → 本机
+    <select id="selClipIn">
+      <option value="auto">直接同步</option><option value="ask">提示后同步</option><option value="off">关闭</option>
+    </select>
+  </label>
+  <label class="field">本机复制 → 远程
+    <select id="selClipOut">
+      <option value="auto">直接同步</option><option value="ask">提示后同步</option><option value="off">关闭</option>
+    </select>
+  </label>
+  <p class="hint">本机→远程需要浏览器允许读取剪贴板（HTTPS 或 localhost 下首次会弹出授权），切回本页面时检测变化；未关闭时，在远程按 Ctrl+V 也会先同步本机内容。仅同步文本。</p>
+</section>
+
+<section id="textPanel" class="panel side hidden">
+  <h3>输入文本 <button class="close" data-close="textPanel">×</button></h3>
+  <textarea id="typeText" placeholder="在这里输入，点击发送后会在远程光标处逐字输入（支持中文）"></textarea>
+  <div class="row"><button id="typeSend">发送</button></div>
+</section>
+
+<section id="filePanel" class="panel side wide hidden">
+  <h3>文件 <button class="close" data-close="filePanel">×</button></h3>
+  <div class="row">
+    <button id="fUp" title="上一级">↑</button>
+    <input id="fPath" placeholder="路径，例如 C:\Users">
+    <button id="fGo">打开</button>
+  </div>
+  <div class="row">
+    <button id="fRefresh">刷新</button>
+    <button id="fMkdir">新建文件夹</button>
+    <button id="fUpload">上传</button>
+    <input id="fInput" type="file" multiple hidden>
+  </div>
+  <div id="fDrop" class="drop">可把文件拖到这里上传到当前目录</div>
+  <div id="fJobs"></div>
+  <div id="fList" class="flist"></div>
+</section>
+
+<script src="/assets/app.js"></script>
+</body>
+</html>
